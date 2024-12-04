@@ -56,3 +56,10 @@ button:hover {
   font-size: 1.2rem;
   text-align: center;
 }
+
+#map {
+  height: 400px;
+  width: 100%;
+  z-index: 1000;
+  position: relative;
+}

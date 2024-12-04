@@ -18,6 +18,42 @@ const matrizAdjacente = [
   [19.5, 27.5, 27.2, 10.2, 15.2, 25, 0],
 ];
 
+const coordenadas = [
+  [-29.5706, -51.4962],
+  [-29.5697, -51.2803], 
+  [-29.7192, -51.4724], 
+  [-29.5220, -51.2873], 
+  [-29.6754, -51.1999], 
+  [-29.4778, -51.2681], 
+  [-29.6490, -51.3741],
+]
+
+function desenharMapa(cidadesSelecionadas, caminhoIndices) {
+  //inicializacao do mapa
+  const map = L.map("map").setView([coordenadas[cidadesSelecionadas[0]][0], coordenadas[cidadesSelecionadas[0]][1]], 13)
+  //adiciona fundo do mapa
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+}).addTo(map).on('tileload', function(e) {
+  console.log('Tileload', e.tile);
+
+  map.invalidateSize();
+});
+  //Marca a cidade de origem e destino no mapa
+  L.marker([coordenadas[cidadesSelecionadas[0]][0], coordenadas[cidadesSelecionadas[0]][1]])
+    .addTo(map)
+    .bindPopup("Cidade de origem: " + cidades[cidadesSelecionadas[0]]);
+  
+    L.marker([coordenadas[cidadesSelecionadas[1]][0], coordenadas[cidadesSelecionadas[1]][1]])
+    .addTo(map)
+    .bindPopup("Cidade de destino: " + cidades[cidadesSelecionadas[1]]);
+
+  //desenha o caminho
+  const caminhoLatLng = caminhoIndices.map(index => [coordenadas[index][0], coordenadas[index][1]]);
+  L.polyline(caminhoLatLng, {color: "#2980b9", weight: 4 }).addTo(map);
+}
+
 function dijkstra(matriz, inicio, destino) {
   const n = matriz.length;
   const distancias = Array(n).fill(Infinity);
@@ -87,5 +123,7 @@ document.getElementById("form").addEventListener("submit", function (e) {
     ).innerText = `Menor caminho: ${resultado.caminho.join(" -> ")}\n
       Distância total: ${resultado.distancia.toFixed(2)} km
       `;
+
+    desenharMapa([partida, chegada], resultado.caminho.map(cidade => cidades.indexOf(cidade)));
   }
 });
