@@ -1,3 +1,8 @@
+let map;
+let markers = [];
+let polyline;
+let layerGroup;
+
 const cidades = [
   "Feliz",
   "Vale Real",
@@ -20,38 +25,99 @@ const matrizAdjacente = [
 
 const coordenadas = [
   [-29.5706, -51.4962],
-  [-29.5697, -51.2803], 
-  [-29.7192, -51.4724], 
-  [-29.5220, -51.2873], 
-  [-29.6754, -51.1999], 
-  [-29.4778, -51.2681], 
-  [-29.6490, -51.3741],
-]
+  [-29.5697, -51.2803],
+  [-29.7192, -51.4724],
+  [-29.522, -51.2873],
+  [-29.6754, -51.1999],
+  [-29.4778, -51.2681],
+  [-29.649, -51.3741],
+];
+
+document.addEventListener("DOMContentLoaded", () => {
+  renderizarMapaInicial();
+
+  setTimeout(() => {
+    if (map) {
+      map.invalidateSize();
+    }
+  }, 500);
+});
+
+function renderizarMapaInicial() {
+  const coordenadasPadrao = [-29.5706, -51.4962]; // Coordenadas padrão
+
+  // Tenta obter a localização do usuário
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        inicializarMapa([latitude, longitude]);
+      },
+      () => {
+        inicializarMapa(coordenadasPadrao); // Coordenadas padrão se a permissão for negada
+      }
+    );
+  } else {
+    inicializarMapa(coordenadasPadrao); // Coordenadas padrão se geolocalização não for suportada
+  }
+}
+
+function inicializarMapa(coordenadasIniciais) {
+  map = L.map("map").setView(coordenadasIniciais, 13);
+
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution:
+      '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  }).addTo(map);
+
+  layerGroup = L.layerGroup().addTo(map);
+
+  setTimeout(() => {
+    if (map) {
+      map.invalidateSize();
+    }
+  }, 100);
+}
 
 function desenharMapa(cidadesSelecionadas, caminhoIndices) {
-  //inicializacao do mapa
-  const map = L.map("map").setView([coordenadas[cidadesSelecionadas[0]][0], coordenadas[cidadesSelecionadas[0]][1]], 13)
-  //adiciona fundo do mapa
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-}).addTo(map).on('tileload', function(e) {
-  console.log('Tileload', e.tile);
+  // Limpa todas as camadas existentes no grupo
+  layerGroup.clearLayers();
 
-  map.invalidateSize();
-});
-  //Marca a cidade de origem e destino no mapa
-  L.marker([coordenadas[cidadesSelecionadas[0]][0], coordenadas[cidadesSelecionadas[0]][1]])
-    .addTo(map)
-    .bindPopup("Cidade de origem: " + cidades[cidadesSelecionadas[0]]);
-  
-    L.marker([coordenadas[cidadesSelecionadas[1]][0], coordenadas[cidadesSelecionadas[1]][1]])
-    .addTo(map)
-    .bindPopup("Cidade de destino: " + cidades[cidadesSelecionadas[1]]);
+  // Adiciona marcadores ao grupo
+  const origemMarker = L.marker([
+    coordenadas[cidadesSelecionadas[0]][0],
+    coordenadas[cidadesSelecionadas[0]][1],
+  ]).bindPopup("Cidade de origem: " + cidades[cidadesSelecionadas[0]]);
+  layerGroup.addLayer(origemMarker);
 
-  //desenha o caminho
-  const caminhoLatLng = caminhoIndices.map(index => [coordenadas[index][0], coordenadas[index][1]]);
-  L.polyline(caminhoLatLng, {color: "#2980b9", weight: 4 }).addTo(map);
+  const destinoMarker = L.marker([
+    coordenadas[cidadesSelecionadas[1]][0],
+    coordenadas[cidadesSelecionadas[1]][1],
+  ]).bindPopup("Cidade de destino: " + cidades[cidadesSelecionadas[1]]);
+  layerGroup.addLayer(destinoMarker);
+
+  // Desenha o caminho e adiciona ao grupo
+  const caminhoLatLng = caminhoIndices
+    .filter((index) => index >= 0 && index < coordenadas.length)
+    .map((index) => [coordenadas[index][0], coordenadas[index][1]]);
+
+  const polyline = L.polyline(caminhoLatLng, {
+    color: "#2980b9",
+    weight: 4,
+  });
+  layerGroup.addLayer(polyline);
+
+  // Ajusta o zoom para incluir todos os elementos no grupo
+  const bounds = L.latLngBounds(caminhoLatLng);
+  map.fitBounds(bounds);
+
+  // Recalcula o tamanho do mapa
+  setTimeout(() => {
+    if (map) {
+      map.invalidateSize();
+    }
+  }, 500);
 }
 
 function dijkstra(matriz, inicio, destino) {
@@ -106,7 +172,7 @@ document.getElementById("form").addEventListener("submit", function (e) {
   const partida = parseInt(document.getElementById("partida").value, 10);
   const chegada = parseInt(document.getElementById("chegada").value, 10);
 
-  if (partida == chegada) {
+  if (partida === chegada) {
     document.getElementById("resultado").innerText =
       "A cidade de partida e chegada devem ser diferentes";
     return;
@@ -121,9 +187,11 @@ document.getElementById("form").addEventListener("submit", function (e) {
     document.getElementById(
       "resultado"
     ).innerText = `Menor caminho: ${resultado.caminho.join(" -> ")}\n
-      Distância total: ${resultado.distancia.toFixed(2)} km
-      `;
+      Distância total: ${resultado.distancia.toFixed(2)} km`;
 
-    desenharMapa([partida, chegada], resultado.caminho.map(cidade => cidades.indexOf(cidade)));
+    desenharMapa(
+      [partida, chegada],
+      resultado.caminho.map((cidade) => cidades.indexOf(cidade))
+    );
   }
 });

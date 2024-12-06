@@ -59,7 +59,10 @@ button:hover {
 
 #map {
   height: 400px;
-  width: 100%;
-  z-index: 1000;
-  position: relative;
+  width: 600px;
+  margin: 0 auto;
+  padding: 0;
+  background-color: transparent;
+  border: none;
+  box-sizing: border-box;
 }
