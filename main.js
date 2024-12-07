@@ -24,13 +24,13 @@ const matrizAdjacente = [
 ];
 
 const coordenadas = [
-  [-29.5706, -51.4962],
-  [-29.5697, -51.2803],
-  [-29.7192, -51.4724],
-  [-29.522, -51.2873],
-  [-29.6754, -51.1999],
-  [-29.4778, -51.2681],
-  [-29.649, -51.3741],
+  [-29.454818, -51.306321],
+  [-29.398153, -51.25361],
+  [-29.591055, -51.376094],
+  [-29.392, -51.3122],
+  [-29.49259, -51.355014],
+  [-29.476316, -51.421433],
+  [-29.36776, -51.37625],
 ];
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function renderizarMapaInicial() {
-  const coordenadasPadrao = [-29.5706, -51.4962]; // Coordenadas padrão
+  const coordenadasPadrao = [-29.398153, -51.25361];
 
   // Tenta obter a localização do usuário
   if (navigator.geolocation) {
@@ -54,16 +54,16 @@ function renderizarMapaInicial() {
         inicializarMapa([latitude, longitude]);
       },
       () => {
-        inicializarMapa(coordenadasPadrao); // Coordenadas padrão se a permissão for negada
+        inicializarMapa(coordenadasPadrao);
       }
     );
   } else {
-    inicializarMapa(coordenadasPadrao); // Coordenadas padrão se geolocalização não for suportada
+    inicializarMapa(coordenadasPadrao);
   }
 }
 
 function inicializarMapa(coordenadasIniciais) {
-  map = L.map("map").setView(coordenadasIniciais, 13);
+  map = L.map("map").setView(coordenadasIniciais, 12);
 
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
@@ -84,7 +84,7 @@ function desenharMapa(cidadesSelecionadas, caminhoIndices) {
   // Limpa todas as camadas existentes no grupo
   layerGroup.clearLayers();
 
-  // Adiciona marcadores ao grupo
+  // Adiciona marcadores ao grupo para a origem e destino
   const origemMarker = L.marker([
     coordenadas[cidadesSelecionadas[0]][0],
     coordenadas[cidadesSelecionadas[0]][1],
@@ -119,6 +119,70 @@ function desenharMapa(cidadesSelecionadas, caminhoIndices) {
     }
   }, 500);
 }
+
+document.getElementById("form").addEventListener("submit", function (e) {
+  e.preventDefault();
+
+  const partida = parseInt(document.getElementById("partida").value, 10);
+  const chegada = parseInt(document.getElementById("chegada").value, 10);
+
+  if (partida === chegada) {
+    document.getElementById("resultado").innerText =
+      "A cidade de partida e chegada devem ser diferentes";
+    return;
+  }
+
+  const resultado = dijkstra(matrizAdjacente, partida, chegada);
+
+  if (resultado.distancia === Infinity) {
+    document.getElementById("resultado").innerText =
+      "Não há caminho entre as cidades selecionadas.";
+  } else {
+    document.getElementById(
+      "resultado"
+    ).innerText = `Menor caminho: ${resultado.caminho.join(" -> ")}\n
+      Distância total: ${resultado.distancia.toFixed(2)} km`;
+
+    const cidadesSelecionadas = [partida, chegada];
+
+    desenharMapa(
+      cidadesSelecionadas,
+      resultado.caminho.map((cidade) => cidades.indexOf(cidade))
+    );
+  }
+});
+
+document.getElementById("form").addEventListener("submit", function (e) {
+  e.preventDefault();
+
+  const partida = parseInt(document.getElementById("partida").value, 10);
+  const chegada = parseInt(document.getElementById("chegada").value, 10);
+
+  if (partida === chegada) {
+    document.getElementById("resultado").innerText =
+      "A cidade de partida e chegada devem ser diferentes";
+    return;
+  }
+
+  const resultado = dijkstra(matrizAdjacente, partida, chegada);
+
+  if (resultado.distancia === Infinity) {
+    document.getElementById("resultado").innerText =
+      "Não há caminho entre as cidades selecionadas.";
+  } else {
+    document.getElementById(
+      "resultado"
+    ).innerText = `Menor caminho: ${resultado.caminho.join(" -> ")}\n
+      Distância total: ${resultado.distancia.toFixed(2)} km`;
+
+    const cidadesSelecionadas = [partida, chegada];
+
+    desenharMapa(
+      cidadesSelecionadas,
+      resultado.caminho.map((cidade) => cidades.indexOf(cidade))
+    );
+  }
+});
 
 function dijkstra(matriz, inicio, destino) {
   const n = matriz.length;
@@ -165,33 +229,3 @@ function dijkstra(matriz, inicio, destino) {
     caminho: caminho.map((index) => cidades[index]),
   };
 }
-
-document.getElementById("form").addEventListener("submit", function (e) {
-  e.preventDefault();
-
-  const partida = parseInt(document.getElementById("partida").value, 10);
-  const chegada = parseInt(document.getElementById("chegada").value, 10);
-
-  if (partida === chegada) {
-    document.getElementById("resultado").innerText =
-      "A cidade de partida e chegada devem ser diferentes";
-    return;
-  }
-
-  const resultado = dijkstra(matrizAdjacente, partida, chegada);
-
-  if (resultado.distancia === Infinity) {
-    document.getElementById("resultado").innerText =
-      "Não há caminho entre as cidades selecionadas.";
-  } else {
-    document.getElementById(
-      "resultado"
-    ).innerText = `Menor caminho: ${resultado.caminho.join(" -> ")}\n
-      Distância total: ${resultado.distancia.toFixed(2)} km`;
-
-    desenharMapa(
-      [partida, chegada],
-      resultado.caminho.map((cidade) => cidades.indexOf(cidade))
-    );
-  }
-});
