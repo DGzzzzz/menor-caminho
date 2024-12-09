@@ -1,6 +1,4 @@
 let map;
-let markers = [];
-let polyline;
 let layerGroup;
 
 const cidades = [
@@ -13,7 +11,7 @@ const cidades = [
   "São Vendelino",
 ];
 
-const matrizAdjacente = [
+const distancias = [
   [0, 9.4, 21, 11, 9.1, 18.9, 19.5],
   [9.4, 0, 28.9, 10.8, 17.1, 26.1, 27.5],
   [21, 28.9, 0, 29.9, 12.4, 18.2, 27.2],
@@ -41,6 +39,38 @@ document.addEventListener("DOMContentLoaded", () => {
       map.invalidateSize();
     }
   }, 500);
+});
+
+document.getElementById("form").addEventListener("submit", function (e) {
+  e.preventDefault();
+
+  const partida = parseInt(document.getElementById("partida").value, 10);
+  const chegada = parseInt(document.getElementById("chegada").value, 10);
+
+  if (partida === chegada) {
+    document.getElementById("resultado").innerText =
+      "A cidade de partida e chegada devem ser diferentes";
+    return;
+  }
+
+  const resultado = dijkstra(distancias, partida, chegada);
+
+  if (resultado.distancia === Infinity) {
+    document.getElementById("resultado").innerText =
+      "Não há caminho entre as cidades selecionadas.";
+  } else {
+    document.getElementById(
+      "resultado"
+    ).innerText = `Menor caminho: ${resultado.caminho.join(" -> ")}\n
+      Distância total: ${resultado.distancia.toFixed(2)} km`;
+
+    const cidadesSelecionadas = [partida, chegada];
+
+    desenharMapa(
+      cidadesSelecionadas,
+      resultado.caminho.map((cidade) => cidades.indexOf(cidade))
+    );
+  }
 });
 
 function renderizarMapaInicial() {
@@ -81,16 +111,16 @@ function inicializarMapa(coordenadasIniciais) {
 }
 
 function desenharMapa(cidadesSelecionadas, caminhoIndices) {
-  // Limpa todas as camadas existentes no grupo
   layerGroup.clearLayers();
 
-  // Adiciona marcadores ao grupo para a origem e destino
+  // Adiciona marcadores para a cidade de origem
   const origemMarker = L.marker([
     coordenadas[cidadesSelecionadas[0]][0],
     coordenadas[cidadesSelecionadas[0]][1],
   ]).bindPopup("Cidade de origem: " + cidades[cidadesSelecionadas[0]]);
   layerGroup.addLayer(origemMarker);
 
+  // Adiciona marcadores para a cidade de destino
   const destinoMarker = L.marker([
     coordenadas[cidadesSelecionadas[1]][0],
     coordenadas[cidadesSelecionadas[1]][1],
@@ -119,70 +149,6 @@ function desenharMapa(cidadesSelecionadas, caminhoIndices) {
     }
   }, 500);
 }
-
-document.getElementById("form").addEventListener("submit", function (e) {
-  e.preventDefault();
-
-  const partida = parseInt(document.getElementById("partida").value, 10);
-  const chegada = parseInt(document.getElementById("chegada").value, 10);
-
-  if (partida === chegada) {
-    document.getElementById("resultado").innerText =
-      "A cidade de partida e chegada devem ser diferentes";
-    return;
-  }
-
-  const resultado = dijkstra(matrizAdjacente, partida, chegada);
-
-  if (resultado.distancia === Infinity) {
-    document.getElementById("resultado").innerText =
-      "Não há caminho entre as cidades selecionadas.";
-  } else {
-    document.getElementById(
-      "resultado"
-    ).innerText = `Menor caminho: ${resultado.caminho.join(" -> ")}\n
-      Distância total: ${resultado.distancia.toFixed(2)} km`;
-
-    const cidadesSelecionadas = [partida, chegada];
-
-    desenharMapa(
-      cidadesSelecionadas,
-      resultado.caminho.map((cidade) => cidades.indexOf(cidade))
-    );
-  }
-});
-
-document.getElementById("form").addEventListener("submit", function (e) {
-  e.preventDefault();
-
-  const partida = parseInt(document.getElementById("partida").value, 10);
-  const chegada = parseInt(document.getElementById("chegada").value, 10);
-
-  if (partida === chegada) {
-    document.getElementById("resultado").innerText =
-      "A cidade de partida e chegada devem ser diferentes";
-    return;
-  }
-
-  const resultado = dijkstra(matrizAdjacente, partida, chegada);
-
-  if (resultado.distancia === Infinity) {
-    document.getElementById("resultado").innerText =
-      "Não há caminho entre as cidades selecionadas.";
-  } else {
-    document.getElementById(
-      "resultado"
-    ).innerText = `Menor caminho: ${resultado.caminho.join(" -> ")}\n
-      Distância total: ${resultado.distancia.toFixed(2)} km`;
-
-    const cidadesSelecionadas = [partida, chegada];
-
-    desenharMapa(
-      cidadesSelecionadas,
-      resultado.caminho.map((cidade) => cidades.indexOf(cidade))
-    );
-  }
-});
 
 function dijkstra(matriz, inicio, destino) {
   const n = matriz.length;
